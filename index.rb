@@ -2,45 +2,44 @@ require 'combine_pdf'
 require 'yomu'
 
 def normalize(text)
-  text
-    .strip
-    .downcase
-    .gsub(/\s+/, ' ')
+  text.downcase.gsub(/\s/, '')
 end
 
-def term_whitespace_combos(term)
-  tokens = term.split(/\b/)
-  output = tokens.take(1)
-  tokens.drop(1).each do |t|
-    if t == " "
-      output = output + output.map { |o| o + t }
+def get_ranges(pages)
+  pages
+    .reduce([]) do |acc, i|
+    l = acc.pop
+    if l && (l.max == i - 1)
+      acc + [(l.min..i)]
+    elsif l
+      acc + [l, (i..i)]
     else
-      output.each { |o| o << t }
+      [(i..i)]
     end
   end
-  output
 end
 
-terms = File.foreach("terms.txt").map(&method(:normalize))
+def print_range(range)
+  if range.min == range.max
+    range.min.to_s
+  else
+    "#{range.min}-#{range.max}"
+  end
+end
+
+terms = File.foreach("terms.txt").map(&:chomp).map(&:strip)
 term_pages = Hash.new { |h, k| h[k] = [] }
 
-pdf = CombinePDF.load("source.pdf")
-pdf.pages.each_with_index do |page, i|
-  $stdout.write "Page #{i}\r"
-
-  p = CombinePDF.new
-  p << page
-
-  text = normalize(Yomu.read(:text, p.to_pdf))
+Dir["pages/*"].sort.each_with_index do |pagefile, i|
+  text = File.read(pagefile)
 
   terms.each do |term|
-    if term_whitespace_combos(term).any? { |c| text.include?(c) }
+    if normalize(text).include?(normalize(term))
       term_pages[term] << i + 1
     end
   end
 end
-puts
 
 term_pages.each do |term, pages|
-  puts [term, *pages].join(",")
+  puts [term, *get_ranges(pages).map(&method(:print_range))].join(",")
 end
