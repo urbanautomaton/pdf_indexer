@@ -2,7 +2,7 @@ require 'combine_pdf'
 require 'yomu'
 
 def normalize(text)
-  text.downcase.gsub(/[\s[:punct:]]/, '')
+  text.downcase.gsub(/\s/, '').tr('‘’', "'")
 end
 
 def get_ranges(pages)
@@ -36,13 +36,19 @@ def print_range(range)
 end
 
 terms = File.foreach("terms.txt").map(&:chomp).map(&:strip)
+normalized_terms = Hash.new { |h, k| h[k] = normalize(k) }
 term_pages = Hash.new { |h, k| h[k] = [] }
 
 Dir["pages/*"].sort.each_with_index do |pagefile, i|
   text = File.read(pagefile)
+  normalized_text = normalize(text)
+
+  if pagefile.include?("page_086")
+    File.open("page86", "w") { |f| f.puts normalized_text }
+  end
 
   terms.each do |term|
-    if normalize(text).include?(normalize(term))
+    if normalized_text.include?(normalized_terms[term])
       term_pages[term] << i + 1
     end
   end
