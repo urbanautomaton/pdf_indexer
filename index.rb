@@ -19,11 +19,19 @@ def get_ranges(pages)
   end
 end
 
+def page_id(page)
+  if page <= 14
+    %w( i ii iii iv v vi vii viii ix x xi xii xiii xiv )[page - 1]
+  else
+    (page - 14).to_s
+  end
+end
+
 def print_range(range)
   if range.min == range.max
-    range.min.to_s
+    page_id(range.min)
   else
-    "#{range.min}-#{range.max}"
+    "#{page_id(range.min)}-#{page_id(range.max)}"
   end
 end
 
@@ -40,6 +48,6 @@ Dir["pages/*"].sort.each_with_index do |pagefile, i|
   end
 end
 
-term_pages.each do |term, pages|
-  puts [term, *get_ranges(pages).map(&method(:print_range))].join(",")
+terms.each do |term|
+  puts [term, *get_ranges(term_pages.fetch(term,[])).map(&method(:print_range))].join(",")
 end
