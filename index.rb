@@ -2,7 +2,7 @@ require 'combine_pdf'
 require 'yomu'
 
 def normalize(text)
-  text.downcase.gsub(/\s/, '')
+  text.downcase.gsub(/[\s[:punct:]]/, '')
 end
 
 def get_ranges(pages)
